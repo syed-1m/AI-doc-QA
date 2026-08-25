@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.security import get_current_user
 from app.db.database import get_db
 from app.models.user import User
+from app.core.redis_pool import get_arq_pool
 from app.repositories.document_repository import (
     create_document,
     delete_document,
@@ -49,6 +50,9 @@ async def upload_document(
         file_size=file_size,
         mime_type=mime_type,
     )
+    redis_pool = await get_arq_pool()
+    await redis_pool.enqueue_job("process_document", str(document.id))
+
     return document
 
 
