@@ -1,4 +1,5 @@
 import uuid
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
@@ -10,6 +11,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.repositories.document_repository import (
     create_document,
+    delete_document,
     get_document_by_id,
     get_documents_by_user,
 )
@@ -68,3 +70,21 @@ async def list_documents(
     db: AsyncSession = Depends(get_db),
 ):
     return await get_documents_by_user(db, current_user.id)
+
+
+
+@router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_document(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    document = await get_document_by_id(db, document_id)
+    if document is None or document.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    file_path = document.file_path
+    await delete_document(db, document)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
