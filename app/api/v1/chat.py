@@ -10,6 +10,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.repositories.document_repository import get_document_by_id, search_similar_chunks
 from app.schemas.chat import QueryRequest
+from app.services.semantic_cache import get_cached_answer, store_answer
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -28,6 +29,16 @@ async def query_documents(
         yield _sse_event("request_accepted", {"question": payload.question})
 
         question_embedding = generate_embedding(payload.question)
+
+        cached = await get_cached_answer(str(current_user.id), question_embedding)
+        if cached is not None:
+            yield _sse_event("cache_hit", {"similarity": cached["similarity"]})
+            yield _sse_event(
+                "complete", {"answer": cached["answer"], "sources": cached["sources"]}
+            )
+            return
+
+        yield _sse_event("cache_miss", {})
         yield _sse_event("document_search", {"status": "searching"})
 
         chunks = await search_similar_chunks(db, current_user.id, question_embedding, limit=5)
@@ -62,6 +73,8 @@ async def query_documents(
                 }
             )
         yield _sse_event("sources_found", {"sources": sources})
+
+        await store_answer(str(current_user.id), question_embedding, answer, sources)
 
         yield _sse_event("complete", {"answer": answer, "sources": sources})
 

@@ -1,0 +1,1 @@
+﻿Our project uses PostgreSQL with the pgvector extension for storing and searching document embeddings. Redis is used for caching and background job queues.
