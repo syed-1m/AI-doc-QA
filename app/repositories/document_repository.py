@@ -1,5 +1,6 @@
 import uuid
 
+from app.models.document_chunk import DocumentChunk
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,3 +41,17 @@ async def get_documents_by_user(db: AsyncSession, user_id: uuid.UUID) -> list[Do
 async def delete_document(db: AsyncSession, document: Document) -> None:
     db.delete(document)
     await db.commit()
+
+
+async def search_similar_chunks(
+    db: AsyncSession, user_id: uuid.UUID, query_embedding: list[float], limit: int = 5
+) -> list[DocumentChunk]:
+    result = await db.execute(
+        select(DocumentChunk)
+        .join(Document, DocumentChunk.document_id == Document.id)
+        .where(Document.user_id == user_id)
+        .where(DocumentChunk.embedding.is_not(None))
+        .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
+        .limit(limit)
+    )
+    return list(result.scalars().all())
