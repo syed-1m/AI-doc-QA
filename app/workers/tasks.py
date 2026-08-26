@@ -8,12 +8,13 @@ from app.db.database import async_session_factory
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.services.document_processor import chunk_text, extract_text
+from app.ai.embeddings import generate_embedding
 
 
 async def process_document(ctx, document_id: str) -> None:
     """
-    ARQ task: extracts text from a document, chunks it, stores the chunks,
-    and updates the document's status. No embeddings yet (that's a later step).
+    ARQ task: extracts text from a document, chunks it, generates Gemini
+    embeddings, stores the chunks, and updates the document's status.
     """
     async with async_session_factory() as db:
         result = await db.execute(select(Document).where(Document.id == uuid.UUID(document_id)))
@@ -30,15 +31,16 @@ async def process_document(ctx, document_id: str) -> None:
             for page_text, page_number in pages:
                 chunks = chunk_text(page_text)
                 for i, chunk_content in enumerate(chunks):
+                    embedding = generate_embedding(chunk_content)
                     db_chunk = DocumentChunk(
                         document_id=document.id,
                         chunk_index=total_chunks,
                         content=chunk_content,
                         page_number=page_number,
+                        embedding=embedding,
                     )
                     db.add(db_chunk)
                     total_chunks += 1
-
             document.status = "completed"
             document.page_count = len(pages)
             await db.commit()

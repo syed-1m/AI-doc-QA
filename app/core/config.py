@@ -19,11 +19,10 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     allowed_file_types: str = "pdf,docx,txt"
 
-    ai_provider: str = "openai"
-    openai_api_key: str = ""
+    ai_provider: str = "gemini"
     gemini_api_key: str = ""
-    embedding_model: str = "text-embedding-3-small"
-    chat_model: str = "gpt-4o-mini"
+    embedding_model: str = "gemini-embedding-001"
+    chat_model: str = "gemini-2.5-flash"
 
     rate_limit_per_minute: int = 30
 
