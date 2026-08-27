@@ -91,12 +91,6 @@ app/
 alembic/ # Database migrations
 
 
-## Running Tests
-
-```bash
-docker compose exec api pytest
-```
-
 ## Known Limitations
 
 - DOCX and TXT files don't have real page boundaries, so `page_number` is always `1` for those formats (PDFs report accurate page numbers).
