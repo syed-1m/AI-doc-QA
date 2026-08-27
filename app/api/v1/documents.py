@@ -10,6 +10,7 @@ from app.core.security import get_current_user
 from app.db.database import get_db
 from app.models.user import User
 from app.core.redis_pool import get_arq_pool
+from app.core.rate_limit import rate_limiter
 from app.repositories.document_repository import (
     create_document,
     delete_document,
@@ -27,6 +28,7 @@ async def upload_document(
     file: UploadFile,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limiter),
 ):
     contents = await file.read()
     file_size = len(contents)
