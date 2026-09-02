@@ -39,7 +39,7 @@ async def get_documents_by_user(db: AsyncSession, user_id: uuid.UUID) -> list[Do
 
 
 async def delete_document(db: AsyncSession, document: Document) -> None:
-    db.delete(document)
+    await db.delete(document)
     await db.commit()
 
 

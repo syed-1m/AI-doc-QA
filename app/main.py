@@ -1,9 +1,11 @@
+from pathlib import Path
+
 from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.auth import router as auth_router
@@ -32,6 +34,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
+
+
+@app.get("/", include_in_schema=False)
+async def frontend():
+    return FileResponse(Path(__file__).parent / "static" / "index.html", media_type="text/html")
 
 
 @app.get("/health")
